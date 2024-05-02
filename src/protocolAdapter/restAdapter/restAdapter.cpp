@@ -4,9 +4,10 @@ void restAdapter::config() {
   
 }
 
-void restAdapter::checkConnect() {
+void restAdapter::configConnection() {
 
 }
+
 
 void restAdapter::sendData() {
 

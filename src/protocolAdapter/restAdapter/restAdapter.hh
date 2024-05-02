@@ -1,8 +1,7 @@
-#include "../protocolAdapter.hh"
 
-class restAdapter : public protocolAdapter {
+class restAdapter {
     public:
-        virtual void config() override = 0;
-        virtual void checkConnect() override = 0;
-        virtual void sendData() override = 0;
+        virtual void config();
+        virtual void configConnection();
+        virtual void sendData();
 };

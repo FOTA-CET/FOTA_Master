@@ -1,0 +1,5 @@
+# Changelog FOTA MASTER 
+## 1.0.0
+### 2024-05-02
+- add test rest (demo)
+- add conan file: cross compile

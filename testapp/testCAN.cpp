@@ -1,5 +1,5 @@
 #include "iostream"
-#include "../src/fotaClient/fotaClient.hh"
+#include "fotaClient.hh"
 
 int main() {
 

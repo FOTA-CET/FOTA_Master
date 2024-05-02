@@ -37,7 +37,8 @@ bool fotaClient::flashECU(ECU ecuType, const std::string& filePath) {
       digitArray.push_back(digit - '0');
     }
 
-    size_frame.can_id = 0x01; // Arbitration ID
+    // Arbitration ID
+    size_frame.can_id = 0x01;
     size_frame.can_dlc = digitArray.size();
     memcpy(size_frame.data, digitArray.data(), digitArray.size());
     ret = canAdapter::sendData(socket_fd, size_frame);
@@ -56,12 +57,10 @@ bool fotaClient::flashECU(ECU ecuType, const std::string& filePath) {
       data_frame.can_dlc = len;
       memcpy(data_frame.data, &dataArray[i], len);
       ret = canAdapter::sendData(socket_fd, data_frame);
-      
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
       if (ret == 0) {
         std::cerr << "Failed to send firmware's data" << std::endl;
       }
-      // Delay for 10ms (adjust as needed)
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
   }
   return true;
