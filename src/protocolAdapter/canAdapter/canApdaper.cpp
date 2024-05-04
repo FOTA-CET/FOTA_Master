@@ -78,3 +78,10 @@ bool canAdapter::sendData(int& socket_fd, const can_frame& data_frame) {
   }
   return true;
 }
+
+bool canAdapter::readData(int socket_fd, can_frame& received_frame) {
+  if(read(socket_fd, &received_frame, sizeof(received_frame)) <= 0) {
+    return false;
+  }
+  return true;
+}
