@@ -11,6 +11,7 @@
 #include <net/if.h>
 #include <linux/can.h>
 #include <linux/can/raw.h>
+#include <cstdlib>
 
 #include "canAdapter.hh"
 
@@ -45,6 +46,8 @@ bool canAdapter::config(int& socket_fd, const std::string& canInterface) {
   struct ifreq ifr;
   struct sockaddr_can addr;
 
+  system("sudo ip link set can0 up type can bitrate 500000 triple-sampling on");
+
   // Open a CAN socket
   socket_fd = socket(PF_CAN, SOCK_RAW, CAN_RAW);
   if (socket_fd < 0) {
@@ -54,16 +57,16 @@ bool canAdapter::config(int& socket_fd, const std::string& canInterface) {
   // Get interface index
   strcpy(ifr.ifr_name, canInterface.c_str());
   if (ioctl(socket_fd, SIOCGIFINDEX, &ifr) < 0) {
-      close(socket_fd);
-      return false;
+    close(socket_fd);
+    return false;
   }
 
   // Bind socket to the CAN interface
   addr.can_family = AF_CAN;
   addr.can_ifindex = ifr.ifr_ifindex;
   if (bind(socket_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-      close(socket_fd);
-      return false;
+    close(socket_fd);
+    return false;
   }
   return true;
 }

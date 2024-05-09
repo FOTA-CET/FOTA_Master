@@ -1,3 +1,6 @@
+#ifndef __CAN_ADAPTER__HH
+#define __CAN_ADAPTER__HH
+
 #include <vector>
 #include "string"
 
@@ -12,3 +15,4 @@ class canAdapter {
         static bool sendData(int& socket_fd, const can_frame& data_frame);
         static bool readData(int socket_fd, can_frame& received_frame);
 };
+#endif

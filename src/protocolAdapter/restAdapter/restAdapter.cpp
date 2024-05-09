@@ -57,20 +57,25 @@ bool restAdapter::sendFileRequest(const std::string &url, const std::string &fil
   struct curl_httppost *formpost = NULL;
   struct curl_httppost *lastptr = NULL;
 
-  curl_global_init(CURL_GLOBAL_ALL);
+  curl_global_init(CURL_GLOBAL_DEFAULT);
   curl_formadd(&formpost, &lastptr, CURLFORM_COPYNAME, "firmware", CURLFORM_FILE, file_path.c_str(), CURLFORM_END);
 
   curl = curl_easy_init();
   if (curl) {
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30L);
 
     res = curl_easy_perform(curl);
+    std::cout << "res: " << res << std::endl;
 
     if (res != CURLE_OK) {
       std::cerr << "Failed to send POST request: " << curl_easy_strerror(res) << std::endl;
       return false;
+    } else {
+      std::cout << "restAdapter::sendDataRequest: Successfully to send POST request" << std::endl;
     }
+
     curl_easy_cleanup(curl);
     curl_formfree(formpost);
   }

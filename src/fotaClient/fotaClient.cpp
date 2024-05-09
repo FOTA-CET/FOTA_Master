@@ -27,7 +27,6 @@ bool fotaClient::flashECU(ECU ecuType, const std::string& filePath) {
     std::string ip = "192.168.193.9";
     std::string urlUpdate;
     std::string urlFileSize;
-    std::string filePath = "/home/nuu9hc/Documents/app.ino.bin";
 
     //config url
     restAdapter::configConnection(ip, urlUpdate, urlFileSize);
@@ -60,12 +59,16 @@ bool fotaClient::flashECU(ECU ecuType, const std::string& filePath) {
     if (ret == 0) {
       std::cerr << "Failed to send file size" << std::endl;
       return false;
+    } else {
+      std::cout << "Successfully to send file size" << std::endl;
     }
 
     ret = restAdapter::sendFileRequest(urlUpdate, filePath);
     if (ret == 0) {
       std::cerr << "Failed to firmware's data" << std::endl;
       return false;
+    } else {
+      std::cout << "Successfully to send firmware's data" << std::endl;
     }
     return true;
 
@@ -112,6 +115,7 @@ bool fotaClient::flashECU(ECU ecuType, const std::string& filePath) {
       }
     }
   }
+  std::cout << "Successfully to update firmware" << std::endl;
   return true;
 }
 
