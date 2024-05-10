@@ -27,6 +27,7 @@ class testApp(ConanFile):
     
     def requirements(self):
         self.requires("libcurl/8.6.0")
+        self.requires("rapidjson/cci.20230929")
     
     def generate(self):
         deps = CMakeDeps(self)

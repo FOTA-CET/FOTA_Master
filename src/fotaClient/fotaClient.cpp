@@ -12,10 +12,9 @@
 bool fotaClient::flashECU(ECU ecuType, const std::string& filePath) {
   auto ret = 0;
   int socket_fd;
-  std::string canInterface = "can0";
 
   //config can
-  ret = canAdapter::config(socket_fd, canInterface);
+  ret = canAdapter::config(socket_fd, ecuFlash.canInterface);
   if (ret == 0) {
     std::cerr << "Failed to config socket CAN" << std::endl;
     return false;
@@ -24,12 +23,11 @@ bool fotaClient::flashECU(ECU ecuType, const std::string& filePath) {
   if (ecuType == ECU::ESP32) {
 
     std::string bin_content;
-    std::string ip = "192.168.193.9";
     std::string urlUpdate;
     std::string urlFileSize;
 
     //config url
-    restAdapter::configConnection(ip, urlUpdate, urlFileSize);
+    restAdapter::configConnection(ecuFlash.ip, urlUpdate, urlFileSize);
 
     ret = restAdapter::readBinFileData(filePath, bin_content);
     if (ret == 0) {
@@ -39,7 +37,7 @@ bool fotaClient::flashECU(ECU ecuType, const std::string& filePath) {
 
     //Request connect wifi
     can_frame signalFrame;
-    signalFrame.can_id = 0x123;
+    signalFrame.can_id = std::stoi(ecuFlash.can_id_Fimware, 0, 16);
     signalFrame.can_dlc = 1;
     signalFrame.data[0] = (unsigned char)(CONNECT_CMD::CONNECT);
     ret = sendESPSignal(socket_fd, signalFrame);
@@ -90,7 +88,7 @@ bool fotaClient::flashECU(ECU ecuType, const std::string& filePath) {
     }
 
     // Arbitration ID
-    size_frame.can_id = 0x01;
+    size_frame.can_id = std::stoi(ecuFlash.can_id_size, 0, 16);;
     size_frame.can_dlc = digitArray.size();
     memcpy(size_frame.data, digitArray.data(), digitArray.size());
     ret = canAdapter::sendData(socket_fd, size_frame);
@@ -103,7 +101,7 @@ bool fotaClient::flashECU(ECU ecuType, const std::string& filePath) {
 
     // Send firmware's data
     can_frame data_frame;
-    data_frame.can_id = 0x02;
+    data_frame.can_id = std::stoi(ecuFlash.can_id_Fimware, 0, 16);;
     for (size_t i = 0; i < dataArray.size(); i += 8) {
       size_t len = std::min<size_t>(8, dataArray.size() - i);
       data_frame.can_dlc = len;
@@ -131,4 +129,8 @@ bool fotaClient::readESPSignal(int& socket_fd, int& signal) {
   }
   signal = (int)received_frame.data[0];
   return true;
+}
+
+void fotaClient::config(const ecuInfo& ecuInfor) {
+  ecuFlash = ecuInfor;
 }

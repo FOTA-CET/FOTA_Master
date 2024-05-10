@@ -2,6 +2,7 @@
 
 int main() {
   auto fota = fotaMasterApp();
+  fota.configure();
   fota.start();
   return 0;
 }

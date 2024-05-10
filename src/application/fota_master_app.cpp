@@ -9,6 +9,7 @@
 #include <csignal>
 
 #include "fota_master_app.hh"
+#include "ecu_config.hh"
 
 fotaMasterApp::fotaMasterApp() {
   if (std::getenv("FOTA_CONFDIR") == nullptr) {
@@ -16,7 +17,7 @@ fotaMasterApp::fotaMasterApp() {
     throw std::runtime_error(errMsg);
   } else {
     fota_conf = std::getenv("FOTA_CONFDIR");
-    ecuConfigFile = fota_conf + "ecu.config";
+    ecuConfigFile = fota_conf + "/ecu.config";
   }
 
   if (std::getenv("FOTA_STORAGE") == nullptr) {
@@ -33,7 +34,7 @@ fotaMasterApp::fotaMasterApp() {
 }
 
 void fotaMasterApp::configure() {
-  
+  EcuConfig::Parse(ecuConfigFile);
 }
 
 void fotaMasterApp::start() {
@@ -44,11 +45,14 @@ void fotaMasterApp::start() {
   std::cout << "nameECUFlash: " << nameECUFlash << std::endl;
   while (!fotaMasterApp::readFifoPipe(fifoFlash, firmware));
   std::cout << "firmware: " << firmware << std::endl;
+
+  auto ecuFlashInfo = EcuConfig::getEcuInfo(nameECUFlash);
   
   fotaClient mfotaClient;
   auto ECU = fotaMasterApp::convertEcuString(nameECUFlash);
   auto filePath = fotaStorage + "/" + firmware;
   std::cout << "filePath: " << filePath << std::endl;
+  mfotaClient.config(ecuFlashInfo);
   auto ret = mfotaClient.flashECU(ECU, filePath);
 
   signal(SIGINT, fotaMasterApp::signalHandler);

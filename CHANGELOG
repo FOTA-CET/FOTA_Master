@@ -1,5 +1,9 @@
 # Changelog FOTA MASTER 
 ## 1.0.0
+### 2024-05-10
+- Add Fota master config, parse file
+- Add ecu config file
+
 ### 2024-05-09
 - Provide fota app
 - Provide communicate via IPC named pipe
