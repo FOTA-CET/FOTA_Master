@@ -1,0 +1,36 @@
+#include <string>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <unistd.h>
+#include <iostream>
+
+bool readFifoPipe(const std::string& fifoPath, std::string& buff) {
+  char buffer[100];
+  auto fd = open(fifoPath.c_str(), O_RDONLY);
+  if (fd == -1) {
+    return false;
+  }
+
+  auto ret = read(fd, &buffer, sizeof(buffer));
+  if (ret <= 0) {
+    return false;
+  }
+  buff = buffer;
+  close(fd);
+  return true;
+}
+
+int main() {
+
+    std::string percent;
+    int temp;
+    auto filepath = "/home/nuu9hc/Documents/percent";
+    while (temp < 100) {
+        readFifoPipe(filepath, percent);
+        temp = std::stoi(percent);
+        std::cout << "percent: " << temp << std::endl;
+    }
+    return 0;
+}

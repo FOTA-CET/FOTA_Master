@@ -47,12 +47,12 @@ void fotaMasterApp::start() {
   std::cout << "firmware: " << firmware << std::endl;
 
   auto ecuFlashInfo = EcuConfig::getEcuInfo(nameECUFlash);
-  
+
   fotaClient mfotaClient;
   auto ECU = fotaMasterApp::convertEcuString(nameECUFlash);
   auto filePath = fotaStorage + "/" + firmware;
   std::cout << "filePath: " << filePath << std::endl;
-  mfotaClient.config(ecuFlashInfo);
+  mfotaClient.config(ecuFlashInfo, fotaStorage);
   auto ret = mfotaClient.flashECU(ECU, filePath);
 
   signal(SIGINT, fotaMasterApp::signalHandler);

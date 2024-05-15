@@ -4,14 +4,28 @@
 #include <cstddef>
 #include <thread>
 #include <chrono>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <unistd.h>
+#include <thread>
+#include <atomic>
+
 
 #include "fotaClient.hh"
 #include "canAdapter.hh"
 #include "restAdapter.hh"
 
+flashStatus fotaClient::ecuStatus;
+std::mutex fotaClient::ecuStatusMutex;    
+std::string fotaClient::fotaStorage;
+
+
 bool fotaClient::flashECU(ECU ecuType, const std::string& filePath) {
   auto ret = 0;
   int socket_fd;
+  setStatus(flashStatus::IDLE);
 
   //config can
   ret = canAdapter::config(socket_fd, ecuFlash.canInterface);
@@ -35,6 +49,7 @@ bool fotaClient::flashECU(ECU ecuType, const std::string& filePath) {
       return false;
     }
 
+    setStatus(flashStatus::FLASHING);
     //Request connect wifi
     can_frame signalFrame;
     signalFrame.can_id = std::stoi(ecuFlash.can_id_Fimware, 0, 16);
@@ -43,29 +58,39 @@ bool fotaClient::flashECU(ECU ecuType, const std::string& filePath) {
     ret = sendESPSignal(socket_fd, signalFrame);
     if (ret == 0) {
       std::cerr << "Failed to send request connect wifi" << std::endl;
+      setStatus(flashStatus::ERROR);
       return false;
     }
 
     int signal;
-    readESPSignal(socket_fd, signal);
+    fotaClient::readESPSignal(socket_fd, signal);
     if (signal != (int)STATUSCODE::ERROR_OK) {
       std::cerr << "Failed to connect wifi" << std::endl;
+      setStatus(flashStatus::ERROR);
       return false;
     }
 
     ret = restAdapter::sendDataRequest(urlFileSize, "fileSize=" + std::to_string(bin_content.size()));
     if (ret == 0) {
       std::cerr << "Failed to send file size" << std::endl;
+      setStatus(flashStatus::ERROR);
       return false;
     } else {
       std::cout << "Successfully to send file size" << std::endl;
     }
 
+    // std::atomic<bool> stopFlag(false);
+    std::thread receivePercentThread(fotaClient::getFlashStatus, std::ref(socket_fd));
     ret = restAdapter::sendFileRequest(urlUpdate, filePath);
+    std::cout << "ret= " << ret << std::endl;
     if (ret == 0) {
-      std::cerr << "Failed to firmware's data" << std::endl;
+      setStatus(flashStatus::ERROR);
+      receivePercentThread.join();
+      std::cerr << "Failed to send firmware's data" << std::endl;
       return false;
     } else {
+      setStatus(flashStatus::DONE);
+      receivePercentThread.join();
       std::cout << "Successfully to send firmware's data" << std::endl;
     }
     return true;
@@ -75,6 +100,7 @@ bool fotaClient::flashECU(ECU ecuType, const std::string& filePath) {
     std::vector<uint8_t> dataArray;
     ret = canAdapter::readHexFileData(filePath, dataArray);
     if (ret == 0) {
+      setStatus(flashStatus::ERROR);
       std::cerr << "Failed to read hex file data" << std::endl;
       return false;
     }
@@ -109,8 +135,22 @@ bool fotaClient::flashECU(ECU ecuType, const std::string& filePath) {
       ret = canAdapter::sendData(socket_fd, data_frame);
       std::this_thread::sleep_for(std::chrono::milliseconds(10));
       if (ret == 0) {
+        setStatus(flashStatus::ERROR);
         std::cerr << "Failed to send firmware's data" << std::endl;
+        return false;
       }
+
+      // Read percent of flashing
+      can_frame received_frame;
+      while(!canAdapter::readData(socket_fd, received_frame)) {
+        std::cerr << "Failed to read percent of flashing" << std::endl;
+      }
+      auto percent = (int)received_frame.data[0];
+      auto percentStr = std::to_string(percent);
+      std::cout << "Percent Flash: " << percent << std::endl;
+      std::string filePath = fotaStorage + "/percent";
+      std::cout << "percent pip: " << filePath << std::endl;
+      fotaClient::writeFifoPipe(filePath, percentStr);
     }
   }
   std::cout << "Successfully to update firmware" << std::endl;
@@ -125,12 +165,46 @@ bool fotaClient::sendESPSignal(int& socket_fd, const can_frame& signalFrame) {
 bool fotaClient::readESPSignal(int& socket_fd, int& signal) {
   can_frame received_frame;
   while (canAdapter::readData(socket_fd, received_frame) == false) {
-      std::cerr << "Failed to read data" << std::endl;
+    std::cerr << "Failed to read data" << std::endl;
   }
   signal = (int)received_frame.data[0];
   return true;
 }
 
-void fotaClient::config(const ecuInfo& ecuInfor) {
+void fotaClient::config(const ecuInfo& ecuInfor, const std::string& storagePath) {
   ecuFlash = ecuInfor;
+  fotaStorage = storagePath;
 }
+
+void fotaClient::getFlashStatus(int& socket_fd) {
+  auto percent = 0;
+  auto temp = 100;
+  while (percent != 100) {
+    fotaClient::readESPSignal(socket_fd, percent);
+    if (percent != temp) {
+      auto filePath = fotaStorage + "/percent";
+      auto percentStr = std::to_string(percent);
+      std::cout << "percent pip: " << percentStr << std::endl;
+      auto ret = fotaClient::writeFifoPipe(filePath, percentStr);
+      temp = percent;
+    } 
+  }
+}
+
+bool fotaClient::writeFifoPipe(const std::string& fifoPath, std::string& buff) {
+  mkfifo(fifoPath.c_str(), 0666);
+  int fd = open(fifoPath.c_str(), O_WRONLY);
+  auto ret = write(fd, buff.c_str(), sizeof(buff));
+  close(fd);
+  if (ret == -1) return false;
+  return true;
+}
+
+void fotaClient::setStatus(flashStatus status) {
+  std::lock_guard<std::mutex> lock(ecuStatusMutex);
+  ecuStatus = status;
+}
+
+// flashStatus fotaClient::getStatus() {
+//   return ecuStatus;
+// }
