@@ -1,4 +1,5 @@
 #include <string>
+#include <thread>
 
 #include "fotaClient.hh"
 
@@ -15,7 +16,7 @@ class fotaMasterApp {
     std::string fota_conf;
     std::string ecuConfigFile;
     std::string fotaStorage;
-    std::string fifoECU;
-    std::string fifoFlash;
-    
+    static std::atomic<bool> stopFlag;
+    static std::thread listFlashRequireThread;
+
 };

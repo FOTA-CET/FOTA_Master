@@ -4,7 +4,9 @@
 #include "linux/can.h"
 #include <string>
 #include <mutex>
+#include <thread>
 #include <atomic>
+#include <chrono>
 
 #include "../config/ecu_config.hh"
 
@@ -26,7 +28,7 @@ class fotaClient {
   public:
     bool flashECU(ECU ecuType, const std::string& file);
     void config(const ecuInfo& ecuInfor, const std::string& storagePath);
-    static void getFlashStatus(int& socket_fd);
+    static void getFlashStatus(int& socket_fd, std::atomic<bool>& stopFlag);
     static void setStatus(flashStatus status);
     // static flashStatus getStatus();
   private:
@@ -38,5 +40,6 @@ class fotaClient {
     static std::string fotaStorage;
     static flashStatus ecuStatus;
     static std::mutex ecuStatusMutex;
+    
 };
 #endif

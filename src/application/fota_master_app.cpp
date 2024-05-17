@@ -10,6 +10,10 @@
 
 #include "fota_master_app.hh"
 #include "ecu_config.hh"
+#include "fotaClientFactory.hh"
+
+std::atomic<bool> fotaMasterApp::stopFlag{false};
+std::thread fotaMasterApp::listFlashRequireThread;
 
 fotaMasterApp::fotaMasterApp() {
   if (std::getenv("FOTA_CONFDIR") == nullptr) {
@@ -25,12 +29,8 @@ fotaMasterApp::fotaMasterApp() {
     throw std::runtime_error(errMsg);
   } else {
     fotaStorage = std::getenv("FOTA_STORAGE");
-    fifoECU = fotaStorage + "/fifoECU";
-    fifoFlash = fotaStorage + "/fifoFlash";
   }
   std::cout << "fotaStorage: " << fotaStorage << std::endl;
-  std::cout << "fifoECU: " << fifoECU << std::endl;
-  std::cout << "fifoFlash: " << fifoFlash << std::endl;
 }
 
 void fotaMasterApp::configure() {
@@ -40,29 +40,41 @@ void fotaMasterApp::configure() {
 void fotaMasterApp::start() {
   std::string nameECUFlash;
   std::string firmware;
-  std::cout << "Starting FOTA MASTER" << std::endl;
-  while (!fotaMasterApp::readFifoPipe(fifoECU, nameECUFlash));
-  std::cout << "nameECUFlash: " << nameECUFlash << std::endl;
-  while (!fotaMasterApp::readFifoPipe(fifoFlash, firmware));
-  std::cout << "firmware: " << firmware << std::endl;
+  flashECU requireFlashEcu;
+  
+  fotaClientFactory* FTClientFactory = fotaClientFactory::getInstance(fotaStorage);
+  listFlashRequireThread = std::thread(&fotaClientFactory::listenFlashRequire, FTClientFactory, std::ref(stopFlag));
 
-  auto ecuFlashInfo = EcuConfig::getEcuInfo(nameECUFlash);
+  while (true)
+  {
+    if (FTClientFactory->getNextFlashECU(requireFlashEcu)) {
+      
+      nameECUFlash = requireFlashEcu.name;
+      firmware = requireFlashEcu.version;
+      std::cout << "Starting Flash " << nameECUFlash << std::endl;
 
-  fotaClient mfotaClient;
-  auto ECU = fotaMasterApp::convertEcuString(nameECUFlash);
-  auto filePath = fotaStorage + "/" + firmware;
-  std::cout << "filePath: " << filePath << std::endl;
-  mfotaClient.config(ecuFlashInfo, fotaStorage);
-  auto ret = mfotaClient.flashECU(ECU, filePath);
+      auto ecuFlashInfo = EcuConfig::getEcuInfo(nameECUFlash);
 
-  signal(SIGINT, fotaMasterApp::signalHandler);
-  signal(SIGTERM, fotaMasterApp::signalHandler);
+      fotaClient mfotaClient;
+      auto ECU = fotaMasterApp::convertEcuString(nameECUFlash);
+      auto filePath = fotaStorage + "/" + firmware;
+      std::cout << "filePath: " << filePath << std::endl;
+      mfotaClient.config(ecuFlashInfo, fotaStorage);
+      auto ret = mfotaClient.flashECU(ECU, filePath);
 
-  fotaMasterApp::start();
+      signal(SIGINT, fotaMasterApp::signalHandler);
+      signal(SIGTERM, fotaMasterApp::signalHandler);
+    }
+  }
+  
+
+  // fotaMasterApp::start();
 }
 
 void fotaMasterApp::signalHandler(int signal) {
   std::cout << "Received signal " << signal << std::endl;
+  stopFlag.store(true);
+  listFlashRequireThread.join();
   exit(signal);
 }
 

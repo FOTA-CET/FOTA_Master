@@ -12,6 +12,7 @@
 #include <linux/can.h>
 #include <linux/can/raw.h>
 #include <cstdlib>
+#include <iostream>
 
 #include "canAdapter.hh"
 
@@ -83,7 +84,21 @@ bool canAdapter::sendData(int& socket_fd, const can_frame& data_frame) {
 }
 
 bool canAdapter::readData(int socket_fd, can_frame& received_frame) {
-  if(read(socket_fd, &received_frame, sizeof(received_frame)) <= 0) {
+  fd_set read_fds;
+  struct timeval timeout;
+
+  FD_ZERO(&read_fds);
+  FD_SET(socket_fd, &read_fds);
+
+  timeout.tv_sec = 1;
+  timeout.tv_usec = 0;
+
+  int rv = select(socket_fd + 1, &read_fds, nullptr, nullptr, &timeout);
+  if (rv <= 0) return false;
+
+  auto x = read(socket_fd, &received_frame, sizeof(received_frame));
+
+  if(x < 0) {
     return false;
   }
   return true;

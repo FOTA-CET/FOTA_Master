@@ -3,6 +3,9 @@ project(testAPP)
 
 include_directories(src/fotaClient)
 
+include_directories(src/fotaClientFactory)
+# add_subdirectory(src/fotaClientFactory clientFactoryLib)
+
 include_directories(src/application)
 add_subdirectory(src/application applicationLib)
 
@@ -27,4 +30,4 @@ include_directories(src/protocolAdapter/canAdapter canLib)
 # target_link_libraries(testConf PUBLIC ecuConfigure)
 
 add_executable(FotaApp src/fota_master.cpp)
-target_link_libraries(FotaApp PUBLIC fotaMasterApp fotaClient)
+target_link_libraries(FotaApp PUBLIC fotaMasterApp fotaClient fotaClientFactory)
