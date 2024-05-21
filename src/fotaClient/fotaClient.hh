@@ -26,9 +26,9 @@ enum class flashStatus {
 class fotaClient {
 
   public:
-    bool flashECU(ECU ecuType, const std::string& file);
+    bool flashECU(const std::string& ecuType, const std::string& file);
     void config(const ecuInfo& ecuInfor, const std::string& storagePath);
-    static void getFlashStatus(int& socket_fd, std::atomic<bool>& stopFlag);
+    static void getFlashStatus(int& socket_fd, const std::string& ecuType, std::atomic<bool>& stopFlag);
     static void setStatus(flashStatus status);
     // static flashStatus getStatus();
   private:

@@ -29,5 +29,5 @@ include_directories(src/protocolAdapter/canAdapter canLib)
 # add_executable(testConf testapp/testConfig.cpp)
 # target_link_libraries(testConf PUBLIC ecuConfigure)
 
-add_executable(FotaApp src/fota_master.cpp)
-target_link_libraries(FotaApp PUBLIC fotaMasterApp fotaClient fotaClientFactory)
+add_executable(FotaMaster src/fota_master.cpp)
+target_link_libraries(FotaMaster PUBLIC fotaMasterApp fotaClient fotaClientFactory)

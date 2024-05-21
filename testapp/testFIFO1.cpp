@@ -11,9 +11,9 @@
 int main() {
     int fd1, fd2;
     std::string ecuName = "ESP32";
-    std::string firmware = "app.ino.bin";
-    std::string fifoECU = "/home/nuu9hc/Documents/fifoECU";
-    std::string fifoFlash = "/home/nuu9hc/Documents/fifoFlash";
+    std::string firmware = "ESP32_v1.0.bin";
+    std::string fifoECU = "/home/nuu9hc/FOTA/fotaStorage/fifoECU";
+    std::string fifoFlash = "/home/nuu9hc/FOTA/fotaStorage/fifoFirmware";
 
     mkfifo(fifoECU.c_str(), 0666);
 

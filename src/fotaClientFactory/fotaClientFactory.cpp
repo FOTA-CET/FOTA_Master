@@ -20,16 +20,15 @@ fotaClientFactory* fotaClientFactory::getInstance(const std::string filepath) {
 fotaClientFactory::fotaClientFactory(const std::string filepath) {
   fotaStorage = filepath;
   fifoECU = fotaStorage + "/fifoECU";
-  fifoFlash = fotaStorage + "/fifoFlash";
+  fifoFlash = fotaStorage + "/fifoFirmware";
   std::cout << "fifoECU: " << fifoECU << std::endl;
-  std::cout << "fifoFlash: " << fifoFlash << std::endl;
+  std::cout << "fifoFirmware: " << fifoFlash << std::endl;
 }
 
 void fotaClientFactory::listenFlashRequire(std::atomic<bool>& stopFlag) {
   std::string nameECUFlash;
   std::string firmware;
   while (!stopFlag.load()) {
-    std::cout << "listenFlashRequire..." << std::endl;
     if (fotaClientFactory::readFifoPipe(fifoECU, nameECUFlash) && 
         fotaClientFactory::readFifoPipe(fifoFlash, firmware)) {
       flashECU ecu{nameECUFlash, firmware};

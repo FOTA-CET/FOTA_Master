@@ -26,11 +26,12 @@ int main() {
 
     std::string percent;
     int temp;
-    auto filepath = "/home/nuu9hc/Documents/percent";
+    auto filepath = "/home/nuu9hc/FOTA/fotaStorage/fifoPercent";
     while (temp < 100) {
-        readFifoPipe(filepath, percent);
-        temp = std::stoi(percent);
-        std::cout << "percent: " << temp << std::endl;
+      if (readFifoPipe(filepath, percent)) {
+        std::cout << "percent: " << percent << std::endl;
+      }
+        // temp = std::stoi(percent);
     }
     return 0;
 }
