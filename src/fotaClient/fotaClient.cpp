@@ -16,6 +16,7 @@
 #include "fotaClient.hh"
 #include "canAdapter.hh"
 #include "restAdapter.hh"
+#include "gpioControl.hh"
 
 flashStatus fotaClient::ecuStatus;
 std::mutex fotaClient::ecuStatusMutex;    
@@ -103,6 +104,10 @@ bool fotaClient::flashECU(const std::string& ecuType, const std::string& filePat
       std::cerr << "Failed to read hex file data" << std::endl;
       return false;
     }
+
+    std::cout << "Starting wakeup bootloader" << std::endl;
+    fotaClient::wakeupBootloader(ecuType, std::stoi(ecuFlash.reset_pin));
+    std::cout << "Finish wakeup bootloader" << std::endl;
 
     // Send firmware's size
     can_frame size_frame;
@@ -213,6 +218,19 @@ void fotaClient::setStatus(flashStatus status) {
   ecuStatus = status;
 }
 
-// flashStatus fotaClient::getStatus() {
-//   return ecuStatus;
-// }
+void fotaClient::wakeupBootloader(const std::string& ecu, int pin) {
+  GPIO gpio(pin);
+  gpio.setModeOutput();
+  gpio.setPinLow();
+
+  if (ecu == "ATMEGA328P") {
+    usleep(100000);
+    gpio.setPinHigh();
+    usleep(100000);
+    std::cout << "Successfully to wake up bootloader" << std::endl;
+  } else {
+    usleep(50000);
+    gpio.setModeInput();
+    usleep(4000000);
+  }
+}

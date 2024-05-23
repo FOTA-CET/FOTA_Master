@@ -24,40 +24,46 @@ void EcuConfig::Parse(const std::string filePath) {
   std::string can_id_size;
   std::string can_id_Fimware;
   std::string ip;
+  std::string reset_pin;
 
-  if(doc.HasMember("ECU") && doc["ECU"].IsArray()) {
+  if (doc.HasMember("ECU") && doc["ECU"].IsArray()) {
     const Value& ECUs = doc["ECU"];
-    for(auto i = 0; i <ECUs.Size(); i++) {
+    for (auto i = 0; i <ECUs.Size(); i++) {
       const Value& ecu = ECUs[i];
-      if(ecu.HasMember("name") && ecu["name"].IsString()) {
+      if (ecu.HasMember("name") && ecu["name"].IsString()) {
         name = ecu["name"].GetString();
-        if(ecu.HasMember("canInterface") && ecu["canInterface"].IsString()) {
+        if (ecu.HasMember("canInterface") && ecu["canInterface"].IsString()) {
           canInterface = ecu["canInterface"].GetString();
         } else {
-          throw std::runtime_error("EcuConfig::Parse eci.config does not contain canInterface");
+          throw std::runtime_error("EcuConfig::Parse ecu.config does not contain canInterface");
         }
-        if(ecu.HasMember("can_id_firmware") && ecu["can_id_firmware"].IsString()) {
+        if (ecu.HasMember("can_id_firmware") && ecu["can_id_firmware"].IsString()) {
           can_id_Fimware = ecu["can_id_firmware"].GetString();
         } else {
-          throw std::runtime_error("EcuConfig::Parse eci.config does not contain can_id_Fimware");
+          throw std::runtime_error("EcuConfig::Parse ecu.config does not contain can_id_Fimware");
         }
         if (name == "ESP32") {
-          if(ecu.HasMember("ip") && ecu["ip"].IsString()) {
+          if (ecu.HasMember("ip") && ecu["ip"].IsString()) {
             ip = ecu["ip"].GetString();
           } else {
-            throw std::runtime_error("EcuConfig::Parse eci.config ESP32 does not contain ip");
+            throw std::runtime_error("EcuConfig::Parse ecu.config ESP32 does not contain ip");
           }
         } else {
-          if(ecu.HasMember("can_id_size") && ecu["can_id_size"].IsString()) {
+          if (ecu.HasMember("can_id_size") && ecu["can_id_size"].IsString()) {
             can_id_size = ecu["can_id_size"].GetString();
           } else {
-            throw std::runtime_error("EcuConfig::Parse eci.config does not contain can_id_size");
+            throw std::runtime_error("EcuConfig::Parse ecu.config does not contain can_id_size");
+          }
+          if (ecu.HasMember("reset_pin") && ecu["reset_pin"].IsString()) {
+            reset_pin = ecu["reset_pin"].GetString();
+          } else {
+            throw std::runtime_error("EcuConfig::Parse ecu.config does not contain reset_pin");
           }
         }
       } else {
-        throw std::runtime_error("EcuConfig::Parse eci.config does not contain name");
+        throw std::runtime_error("EcuConfig::Parse ecu.config does not contain name");
       }
-      ecuInfo ecuInfor {name, canInterface, can_id_size, can_id_Fimware, ip};
+      ecuInfo ecuInfor {name, canInterface, can_id_size, can_id_Fimware, ip, reset_pin};
       ecuInfoList.push_back(ecuInfor);
     }
   }

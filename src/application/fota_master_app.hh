@@ -8,7 +8,6 @@ class fotaMasterApp {
     fotaMasterApp();
     void configure();
     void start();
-    ECU convertEcuString(const std::string& ecuName);
 
   private:
     static void signalHandler(int signal);

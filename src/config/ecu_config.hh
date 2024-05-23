@@ -12,6 +12,7 @@ struct ecuInfo
   std::string can_id_size;
   std::string can_id_Fimware;
   std::string ip;
+  std::string reset_pin;
 };
 
 class EcuConfig {

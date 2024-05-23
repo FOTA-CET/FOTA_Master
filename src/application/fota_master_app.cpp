@@ -43,7 +43,7 @@ void fotaMasterApp::start() {
   while (true)
   {
     if (FTClientFactory->getNextFlashECU(requireFlashEcu)) {
-      
+    
       nameECUFlash = requireFlashEcu.name;
       firmware = requireFlashEcu.version;
       std::cout << "Starting Flash " << nameECUFlash << std::endl;
@@ -61,9 +61,6 @@ void fotaMasterApp::start() {
       signal(SIGTERM, fotaMasterApp::signalHandler);
     }
   }
-  
-
-  // fotaMasterApp::start();
 }
 
 void fotaMasterApp::signalHandler(int signal) {
@@ -89,8 +86,3 @@ bool fotaMasterApp::readFifoPipe(const std::string& fifoPath, std::string& buff)
   return true;
 }
 
-ECU fotaMasterApp::convertEcuString(const std::string& ecuName) {
-  if (ecuName == "STM32") return ECU::STM32;
-  if (ecuName == "ATMEGA328P") return ECU::ATMEGA328P;
-  if (ecuName == "ESP32") return ECU::ESP32;
-} 

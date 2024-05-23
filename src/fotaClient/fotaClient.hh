@@ -10,11 +10,6 @@
 
 #include "../config/ecu_config.hh"
 
-enum class ECU {
-  STM32,
-  ATMEGA328P,
-  ESP32
-};
 
 enum class flashStatus {
   IDLE,
@@ -30,6 +25,7 @@ class fotaClient {
     void config(const ecuInfo& ecuInfor, const std::string& storagePath);
     static void getFlashStatus(int& socket_fd, const std::string& ecuType, std::atomic<bool>& stopFlag);
     static void setStatus(flashStatus status);
+    static void wakeupBootloader(const std::string& ecu, int pin);
     // static flashStatus getStatus();
   private:
     bool sendESPSignal(int& socket_fd, const can_frame& signalFrame);
