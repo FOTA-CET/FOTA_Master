@@ -1,5 +1,7 @@
 # FOTA_Master
-
+- Monitor and coordinate the entire FOTA update process in the vehicle.
+- Be notified by FOTA Connect when new updates are available.
+- Retrieve updates from local storage and coordinate their delivery to target ECUs.
 ### Cross compile with conan:
 create conan profile: 
 ```sh
@@ -23,3 +25,6 @@ cd build
 conan install .. --build=missing -pr=rasp3B
 conan build .. -pr=rasp3B
 ```
+### Design
+## Sequence diagram
+![image](https://github.com/FOTA-CET/FOTA_Master/assets/82272158/32961de3-b2af-44cc-b51c-9a1051946b95)
