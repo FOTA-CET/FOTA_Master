@@ -21,12 +21,14 @@
 flashStatus fotaClient::ecuStatus;
 std::mutex fotaClient::ecuStatusMutex;    
 std::string fotaClient::fotaStorage;
+std::string fotaClient::maxPercent;
 
 
 bool fotaClient::flashECU(const std::string& ecuType, const std::string& filePath) {
   auto ret = 0;
   int socket_fd;
   setStatus(flashStatus::IDLE);
+  auto statusPipe = fotaStorage + "/fifoStatus";
 
   //config can
   ret = canAdapter::config(socket_fd, ecuFlash.canInterface);
@@ -64,10 +66,24 @@ bool fotaClient::flashECU(const std::string& ecuType, const std::string& filePat
     }
 
     int signal;
-    fotaClient::readESPSignal(socket_fd, signal);
+    while(!fotaClient::readESPSignal(socket_fd, signal));
+    if (ret == 0) {
+      std::cerr << "Failed to read signal" << std::endl;
+      setStatus(flashStatus::ERROR);
+      return false;
+    }
+
+    std::cout << "esp signal: " << signal << std::endl;
     if (signal != (int)STATUSCODE::ERROR_OK) {
       std::cerr << "Failed to connect wifi" << std::endl;
       setStatus(flashStatus::ERROR);
+      auto status = ecuType + "_FAILED";
+      ret = writeFifoPipe(statusPipe, status);
+      if (ret) {
+        std::cout << "Successfully to write status" << std::endl;
+      } else {
+        std::cout << "Failed to write status" << std::endl;
+      }
       return false;
     }
 
@@ -85,8 +101,15 @@ bool fotaClient::flashECU(const std::string& ecuType, const std::string& filePat
     ret = restAdapter::sendFileRequest(urlUpdate, filePath);
     stopFlag.store(true);
     receivePercentThread.join();
-    if (ret == 0) {
+    if (ret == 0 && maxPercent != "100") {
       setStatus(flashStatus::ERROR);
+      auto status = ecuType + "_FAILED";
+      ret = writeFifoPipe(statusPipe, status);
+      if (ret) {
+        std::cout << "Successfully to write status" << std::endl;
+      } else {
+        std::cout << "Failed to write status" << std::endl;
+      }
       std::cerr << "Failed to send firmware's data" << std::endl;
       return false;
     } else {
@@ -187,6 +210,7 @@ void fotaClient::getFlashStatus(int& socket_fd, const std::string& ecuType, std:
       std::cout << stopFlag.load() << std::endl;
       auto filePath = fotaStorage + "/fifoPercent";
       auto percentStr = ecuType + "_" + std::to_string(percent);
+      maxPercent = std::to_string(percent);;
       std::cout << "percent pip: " << percentStr << std::endl;
       temp = percent;
       auto ret = fotaClient::writeFifoPipe(filePath, percentStr);

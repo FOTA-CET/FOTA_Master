@@ -70,19 +70,3 @@ void fotaMasterApp::signalHandler(int signal) {
   exit(signal);
 }
 
-bool fotaMasterApp::readFifoPipe(const std::string& fifoPath, std::string& buff) {
-  char buffer[100];
-  auto fd = open(fifoPath.c_str(), O_RDONLY);
-  if (fd == -1) {
-    return false;
-  }
-
-  auto ret = read(fd, &buffer, sizeof(buffer));
-  if (ret <= 0) {
-    return false;
-  }
-  buff = buffer;
-  close(fd);
-  return true;
-}
-

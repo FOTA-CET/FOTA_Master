@@ -6,7 +6,8 @@ enum class CONNECT_CMD {
 };
 
 enum class STATUSCODE {
-  ERROR_OK = 65
+  ERROR_OK = 65,
+  FAILED = 66
 };
 class restAdapter {
 

@@ -33,6 +33,7 @@ class fotaClient {
     static bool writeFifoPipe(const std::string& fifoPath, std::string& buff);
     can_frame canframe;
     ecuInfo ecuFlash;
+    static std::string maxPercent;
     static std::string fotaStorage;
     static flashStatus ecuStatus;
     static std::mutex ecuStatusMutex;

@@ -11,7 +11,6 @@ class fotaMasterApp {
 
   private:
     static void signalHandler(int signal);
-    bool readFifoPipe(const std::string& fifoPath, std::string& buff);
     std::string fota_conf;
     std::string ecuConfigFile;
     std::string fotaStorage;
