@@ -160,21 +160,39 @@ bool fotaClient::flashECU(const std::string& ecuType, const std::string& filePat
 
     std::atomic<bool> stopFlag(false);
     std::thread receivePercentThread(fotaClient::getFlashStatus, std::ref(socket_fd), ecuType, std::ref(stopFlag));
+
     for (size_t i = 0; i < dataArray.size(); i += 8) {
-      size_t len = std::min<size_t>(8, dataArray.size() - i);
-      data_frame.can_dlc = len;
-      memcpy(data_frame.data, &dataArray[i], len);
-      ret = canAdapter::sendData(socket_fd, data_frame);
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));
-      if (ret == 0) {
-        setStatus(flashStatus::ERROR);
-        std::cerr << "Failed to send firmware's data" << std::endl;
-        stopFlag.store(true);
-        receivePercentThread.join();
-        return false;
+      if (!stopFlag.load()) {
+        size_t len = std::min<size_t>(8, dataArray.size() - i);
+        data_frame.can_dlc = len;
+        memcpy(data_frame.data, &dataArray[i], len);
+        ret = canAdapter::sendData(socket_fd, data_frame);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        if (ret == 0) {
+          setStatus(flashStatus::ERROR);
+          std::cerr << "Failed to send firmware's data" << std::endl;
+          stopFlag.store(true);
+          receivePercentThread.join();
+          return false;
+        } else {
+          std::cout << "Successfully to send firmware's data" << std::endl;
+        } 
       } else {
-        std::cout << "Successfully to send firmware's data" << std::endl;
-      } 
+        std::cout << "Break send firmware" << std::endl;
+        break;
+      }
+    }
+    if (maxPercent != "100") {
+      receivePercentThread.join();
+      std::cerr << "Failed to send firmware's data" << std::endl;
+      auto status = ecuType + "_FAILED";
+      ret = writeFifoPipe(statusPipe, status);
+      if (ret) {
+        std::cout << "Successfully to write status" << std::endl;
+      } else {
+        std::cout << "Failed to write status" << std::endl;
+      }
+      return false;
     }
     stopFlag.store(true);
     receivePercentThread.join();
@@ -206,20 +224,48 @@ void fotaClient::getFlashStatus(int& socket_fd, const std::string& ecuType, std:
   auto temp = 100;
   
   while (!stopFlag.load()) {
-    if (fotaClient::readESPSignal(socket_fd, percent) && percent != temp) {
-      std::cout << stopFlag.load() << std::endl;
-      auto filePath = fotaStorage + "/fifoPercent";
-      auto percentStr = ecuType + "_" + std::to_string(percent);
-      maxPercent = std::to_string(percent);;
-      std::cout << "percent pip: " << percentStr << std::endl;
-      temp = percent;
-      auto ret = fotaClient::writeFifoPipe(filePath, percentStr);
-      if (ret) {
-        std::cout << "Successfully to write percent" << std::endl;
-      } else {
-        std::cout << "Failed to write percent" << std::endl;
+    if (ecuType == "ESP32") {
+      if (fotaClient::readESPSignal(socket_fd, percent) && percent != temp) {
+        std::cout << stopFlag.load() << std::endl;
+        auto filePath = fotaStorage + "/fifoPercent";
+        auto percentStr = ecuType + "_" + std::to_string(percent);
+        maxPercent = std::to_string(percent);
+        std::cout << "percent pip: " << percentStr << std::endl;
+        temp = percent;
+        auto ret = fotaClient::writeFifoPipe(filePath, percentStr);
+        if (ret) {
+          std::cout << "Successfully to write percent" << std::endl;
+        } else {
+          std::cout << "Failed to write percent" << std::endl;
+        }
+      } 
+    } else {
+      auto start_time = std::chrono::steady_clock::now();
+      std::chrono::duration<double> timeout;
+
+      while (!fotaClient::readESPSignal(socket_fd, percent) && timeout < std::chrono::seconds(3)) {
+        std::cout << "Failed to read percent" << std::endl;
+        timeout = std::chrono::steady_clock::now() - start_time;
       }
-    } 
+      
+      if (timeout >= std::chrono::seconds(3)) {
+        stopFlag.store(true);
+      } else {
+          if ((percent == 0 || percent == 25 || percent == 50 || percent == 75 || percent == 100) && percent != temp) {
+            auto filePath = fotaStorage + "/fifoPercent";
+            auto percentStr = ecuType + "_" + std::to_string(percent);
+            maxPercent = std::to_string(percent);;
+            std::cout << "percent pip: " << percentStr << std::endl;
+            temp = percent;
+            auto ret = fotaClient::writeFifoPipe(filePath, percentStr);
+            if (ret) {
+              std::cout << "Successfully to write percent" << std::endl;
+            } else {
+              std::cout << "Failed to write percent" << std::endl;
+            }
+          }
+      }
+    }
   }
   std::cout << "Thread stopped" << std::endl;
 }
