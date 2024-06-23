@@ -182,6 +182,10 @@ bool fotaClient::flashECU(const std::string& ecuType, const std::string& filePat
         break;
       }
     }
+
+    while (!stopFlag.load());
+    
+    std::cout << "maxPercent: " << maxPercent << std::endl;
     if (maxPercent != "100") {
       receivePercentThread.join();
       std::cerr << "Failed to send firmware's data" << std::endl;
