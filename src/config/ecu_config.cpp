@@ -23,6 +23,7 @@ void EcuConfig::Parse(const std::string filePath) {
   std::string canInterface;
   std::string can_id_size;
   std::string can_id_Fimware;
+  std::string can_id_Reset;
   std::string ip;
   std::string reset_pin;
 
@@ -59,11 +60,19 @@ void EcuConfig::Parse(const std::string filePath) {
           } else {
             throw std::runtime_error("EcuConfig::Parse ecu.config does not contain reset_pin");
           }
+
+          if (name == "STM32") {
+            if (ecu.HasMember("can_id_reset") && ecu["can_id_reset"].IsString())  {
+              can_id_Reset = ecu["can_id_reset"].GetString();
+            } else {
+              throw std::runtime_error("EcuConfig::Parse ecu.config does not contain can_id_reset");
+            }
+          }
         }
       } else {
         throw std::runtime_error("EcuConfig::Parse ecu.config does not contain name");
       }
-      ecuInfo ecuInfor {name, canInterface, can_id_size, can_id_Fimware, ip, reset_pin};
+      ecuInfo ecuInfor {name, canInterface, can_id_size, can_id_Fimware, can_id_Reset, ip, reset_pin};
       ecuInfoList.push_back(ecuInfor);
     }
   }

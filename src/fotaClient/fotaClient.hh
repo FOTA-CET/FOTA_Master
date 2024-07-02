@@ -10,6 +10,7 @@
 
 #include "../config/ecu_config.hh"
 
+#define RESET_CMD 65
 
 enum class flashStatus {
   IDLE,
@@ -22,6 +23,7 @@ class fotaClient {
 
   public:
     bool flashECU(const std::string& ecuType, const std::string& file);
+    bool resetFirmware(const std::string& ecuType);
     void config(const ecuInfo& ecuInfor, const std::string& storagePath);
     static void getFlashStatus(int& socket_fd, const std::string& ecuType, std::atomic<bool>& stopFlag);
     static void setStatus(flashStatus status);
