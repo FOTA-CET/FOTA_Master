@@ -225,9 +225,9 @@ bool fotaClient::resetFirmware(const std::string& ecuType) {
   signalFrame.can_id = std::stoi(ecuFlash.can_id_Reset, 0, 16);
   signalFrame.can_dlc = 1;
   signalFrame.data[0] = (unsigned char)(RESET_CMD);
-  ret = sendESPSignal(socket_fd, signalFrame);
+  ret = canAdapter::sendData(socket_fd, signalFrame);
   if (ret == 0) {
-    std::cerr << "Failed to send request connect wifi" << std::endl;
+    std::cerr << "Failed to send request reset firmware" << std::endl;
     return false;
   }
 }
