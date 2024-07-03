@@ -16,5 +16,6 @@ class fotaMasterApp {
     std::string fotaStorage;
     static std::atomic<bool> stopFlag;
     static std::thread listFlashRequireThread;
+    static std::thread HandleResetFirmwareThread;
 
 };

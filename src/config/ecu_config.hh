@@ -11,6 +11,7 @@ struct ecuInfo
   std::string canInterface;
   std::string can_id_size;
   std::string can_id_Fimware;
+  std::string can_id_Reset;
   std::string ip;
   std::string reset_pin;
 };

@@ -7,13 +7,16 @@
 #include <unistd.h>
 #include <iostream>
 #include <csignal>
+#include <memory>
 
 #include "fota_master_app.hh"
 #include "ecu_config.hh"
 #include "fotaClientFactory.hh"
+#include "resetHandler.hh"
 
 std::atomic<bool> fotaMasterApp::stopFlag{false};
 std::thread fotaMasterApp::listFlashRequireThread;
+std::thread fotaMasterApp::HandleResetFirmwareThread;
 
 fotaMasterApp::fotaMasterApp() {
 
@@ -38,7 +41,9 @@ void fotaMasterApp::start() {
   flashECU requireFlashEcu;
   
   fotaClientFactory* FTClientFactory = fotaClientFactory::getInstance(fotaStorage);
+  std::shared_ptr<resetHandler> mResetHandler = std::make_shared<resetHandler>(fotaStorage);
   listFlashRequireThread = std::thread(&fotaClientFactory::listenFlashRequire, FTClientFactory, std::ref(stopFlag));
+  std::thread HandleResetFirmwareThread(&resetHandler::resetFirmware, mResetHandler, std::ref(stopFlag));
 
   while (true)
   {
@@ -67,6 +72,7 @@ void fotaMasterApp::signalHandler(int signal) {
   std::cout << "Received signal " << signal << std::endl;
   stopFlag.store(true);
   listFlashRequireThread.join();
+  HandleResetFirmwareThread.join();
   exit(signal);
 }
 

@@ -205,6 +205,33 @@ bool fotaClient::flashECU(const std::string& ecuType, const std::string& filePat
   }
 }
 
+bool fotaClient::resetFirmware(const std::string& ecuType) {
+  auto ret = 0;
+  int socket_fd;
+
+  //config can
+  ret = canAdapter::config(socket_fd, ecuFlash.canInterface);
+  if (ret == 0) {
+    std::cerr << "Failed to config socket CAN" << std::endl;
+    return false;
+  }
+
+  std::cout << "Starting wakeup bootloader" << std::endl;
+  fotaClient::wakeupBootloader(ecuType, std::stoi(ecuFlash.reset_pin));
+  std::cout << "Finish wakeup bootloader" << std::endl;
+
+  //Request Reset Firmware
+  can_frame signalFrame;
+  signalFrame.can_id = std::stoi(ecuFlash.can_id_Reset, 0, 16);
+  signalFrame.can_dlc = 1;
+  signalFrame.data[0] = (unsigned char)(RESET_CMD);
+  ret = canAdapter::sendData(socket_fd, signalFrame);
+  if (ret == 0) {
+    std::cerr << "Failed to send request reset firmware" << std::endl;
+    return false;
+  }
+}
+
 bool fotaClient::sendESPSignal(int& socket_fd, const can_frame& signalFrame) {
   auto ret = canAdapter::sendData(socket_fd, signalFrame);
   return ret;
