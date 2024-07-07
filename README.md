@@ -3,6 +3,9 @@
 - Be notified by FOTA Connect when new updates are available.
 - Retrieve updates from local storage and coordinate their delivery to target ECUs.
 ### Design
+## Block diagram
+![image](https://github.com/FOTA-CET/FOTA_Master/assets/82272158/ecb133ca-c174-4cd1-bdc8-d7f088e2efc5)
+
 ## Sequence diagram
 ![image](https://github.com/FOTA-CET/FOTA_Master/assets/82272158/32961de3-b2af-44cc-b51c-9a1051946b95)
 ### Cross compile with conan:
